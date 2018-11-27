@@ -35,7 +35,7 @@ sub Main
 		$random =~ s/[\r\n]//g;
 		open(OUT,">res/res-$random.txt")||die("The file can't find!\n");
 
-		my $thread = threads->create(\&dowork,$group->{$key},\*OUT,$ref->{mp3_dest},$ref->{wav_dest});
+		my $thread = threads->create(\&dowork,$group->{$key},\*OUT,$ref->{mp3_dest},$ref->{wav_dest},$ref->{proxy_flag});
 		push @threads,$thread;
 	}
 
@@ -64,12 +64,15 @@ sub dowork
 {
 	my $param = shift;
 	my $filehandle = shift;
-	
+	my $mp3_dest = shift;
+	my $wav_dest = shift;
+	my $proxy_flag = shift;
+
 	foreach my $row (@$param)
 	{
 		chomp($row);
 		print $row."\n";
-		getData($row,$filehandle);
+		getData($row,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
 	}
 }
 
@@ -88,6 +91,7 @@ sub init
 
 	$res->{mp3_dest} = $mp3_dest;
 	$res->{wav_dest} = $wav_dest;
+	$res->{proxy_flag} = $config->{config}->{proxy_flag};
 	return $res;
 }
 
@@ -123,12 +127,13 @@ sub getData
 	my $filehandle = shift;
 	my $mp3_dest = shift;
 	my $wav_dest = shift;
+	my $proxy_flag = shift;
 
 	my $try = 5;
 	
 	my $ua = LWP::UserAgent->new;
 
-	if($config->{config}->{proxy_flag} == 1)
+	if($proxy_flag == 1)
 	{
 		$ua->proxy('http', getProxyIP());
 	}
@@ -179,7 +184,8 @@ sub getData
 		
 		sleep(2);
 		print "Get data fail, Try again...$url\n";
-		getData($url);
+		#getData($url);
+		getData($url,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
 	}
 }
 
@@ -188,6 +194,9 @@ sub download
 	my $url = shift;
 	my $mp3_dest = shift;
 	my $wav_dest = shift;
+	
+	my $mp3_filename;
+	my $wav_filename;
 
 	if($url =~ /.*\/(.*)\.mp3/)
 	{
