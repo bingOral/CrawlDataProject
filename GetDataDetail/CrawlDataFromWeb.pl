@@ -81,12 +81,14 @@ sub init
 	my $res;
 	my $config = Config::Tiny->new;
 	$config = Config::Tiny->read('config/config.ini', 'utf8');
-
+	
 	my $mp3_dest = $config->{config}->{mp3_dir};
 	my $wav_dest = $config->{config}->{wav_dir};
 	my $res_dest = $config->{config}->{res_dir};
 	createdir($mp3_dest);
 	createdir($wav_dest);
+	
+	qx(rm -rf $res_dest);
 	createdir($res_dest);
 
 	$res->{mp3_dest} = $mp3_dest;
@@ -98,9 +100,9 @@ sub init
 sub createdir
 {
 	my $dir = shift;
-	unless (-e $dir) 
+	unless(-e $dir) 
 	{
-		mkdir($dir);
+		qx(mkdir -p $dir);
 	}
 }
 
@@ -149,6 +151,7 @@ sub getData
 		my $filename;
 		if($mp3_node)
 		{
+			print $mp3_node->{href}."\n";
 			$filename = download($mp3_node->{'href'},$mp3_dest,$wav_dest);
 		}
 		else
@@ -170,7 +173,7 @@ sub getData
 				}
 				$buffer .= $text." ";
 			}
-			
+
 			save($url,$filename,$buffer,$filehandle);
 			$buffer = "";
 		}
@@ -184,7 +187,6 @@ sub getData
 		
 		sleep(2);
 		print "Get data fail, Try again...$url\n";
-		#getData($url);
 		getData($url,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
 	}
 }
@@ -207,6 +209,8 @@ sub download
 	}
 
 	getstore($url, $mp3_filename);
+	print $mp3_filename."\n";
+	print $url."\n";
 
 	#convert
 	my $c_str = "ffmpeg -v quiet -y -i $mp3_filename -f wav -ar 16000 -ac 1 $wav_filename";
@@ -218,14 +222,13 @@ sub download
 
 sub save
 {
+	my $url = shift;
+	my $filename = shift;
+	my $info = shift;
 	my $filehandle = shift;
 
 	my $jsonparser = new JSON;
 	my $res;
-
-	my $url = shift;
-	my $filename = shift;
-	my $info = shift;
 	my $time = strftime("%Y.%m.%d %H:%M:%S",localtime());
 
 	$res->{'url'} = $url;
