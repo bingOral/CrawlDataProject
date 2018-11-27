@@ -12,35 +12,127 @@ use LWP::UserAgent;
 use HTML::TreeBuilder;
 binmode STDOUT, ":utf8";
 
-my $config = Config::Tiny->new;
-$config = Config::Tiny->read('config/config.ini', 'utf8');
-
-if(scalar(@ARGV) != 3)
+if(scalar(@ARGV) != 2)
 {
-	print "Usage : perl $0 list output.res threadnum\n";
+	print "Usage : perl $0 input.list threadnum\n";
 	exit;
 }
 
-my $mp3_dest = "/data/voa/normal/mp3/";
-my $wav_dest = "/data/voa/normal/wav/";
-
-open(IN,$ARGV[0])||die("The file can't find!\n");
-open(OUT,">$ARGV[1]")||die("The file can't find!\n");
-
-while(my $row = <IN>)
+&Main();
+sub Main
 {
-	chomp($row);
-	print $row."\n";
-	getData($row);
-	#die;
+	my $ref = init();
+
+	open(IN,$ARGV[0])||die("The file can't find!\n");
+	my $threadnum = $ARGV[1];
+	my @tasks = <IN>;
+	my $group = div(\@tasks,$threadnum);
+
+	my @threads;
+	foreach my $key (keys %$group)
+	{
+		my $random = qx(uuidgen);
+		$random =~ s/[\r\n]//g;
+		open(OUT,">res/res-$random.txt")||die("The file can't find!\n");
+
+		my $thread = threads->create(\&dowork,$group->{$key},\*OUT,$ref->{mp3_dest},$ref->{wav_dest});
+		push @threads,$thread;
+	}
+
+	foreach(@threads)
+	{
+		$_->join();
+	}
+}
+
+sub div
+{
+	my $ref = shift;
+	my $threadnum = shift;
+
+	my $res;
+    	for(my $i = 0; $i < scalar(@$ref); $i++)
+   	{
+   		my $flag = $i%$threadnum;
+   		push @{$res->{$flag}},$ref->[$i];
+    	}
+
+    	return $res;
+}
+
+sub dowork
+{
+	my $param = shift;
+	my $filehandle = shift;
+	
+	foreach my $row (@$param)
+	{
+		chomp($row);
+		print $row."\n";
+		getData($row,$filehandle);
+	}
+}
+
+sub init
+{
+	my $res;
+	my $config = Config::Tiny->new;
+	$config = Config::Tiny->read('config/config.ini', 'utf8');
+
+	my $mp3_dest = $config->{config}->{mp3_dir};
+	my $wav_dest = $config->{config}->{wav_dir};
+	my $res_dest = $config->{config}->{res_dir};
+	createdir($mp3_dest);
+	createdir($wav_dest);
+	createdir($res_dest);
+
+	$res->{mp3_dest} = $mp3_dest;
+	$res->{wav_dest} = $wav_dest;
+	return $res;
+}
+
+sub createdir
+{
+	my $dir = shift;
+	unless (-e $dir) 
+	{
+		mkdir($dir);
+	}
+}
+
+sub getProxyIP
+{
+	my $ua = LWP::UserAgent->new;
+	my $response = $ua->get('http://123.207.35.36:5010/get');
+	if($response->is_success)
+	{
+		return 'http://'.$response->decoded_content;
+	}
+	else
+	{
+		sleep(2);
+		print "Get proxy ip fail, Try again...\n";
+		getProxyIP();
+	}
+	
 }
 
 sub getData 
 {
 	my $url = shift;
+	my $filehandle = shift;
+	my $mp3_dest = shift;
+	my $wav_dest = shift;
+
 	my $try = 5;
 	
 	my $ua = LWP::UserAgent->new;
+
+	if($config->{config}->{proxy_flag} == 1)
+	{
+		$ua->proxy('http', getProxyIP());
+	}
+
 	$ua->agent('Mozilla/5.0 '.$ua->_agent);
 	my $response = $ua->get($url);
 
@@ -52,7 +144,7 @@ sub getData
 		my $filename;
 		if($mp3_node)
 		{
-			$filename = download($mp3_node->{'href'});
+			$filename = download($mp3_node->{'href'},$mp3_dest,$wav_dest);
 		}
 		else
 		{
@@ -74,7 +166,7 @@ sub getData
 				$buffer .= $text." ";
 			}
 			
-			save($url,$filename,$buffer);
+			save($url,$filename,$buffer,$filehandle);
 			$buffer = "";
 		}
 	}
@@ -94,9 +186,9 @@ sub getData
 sub download
 {
 	my $url = shift;
+	my $mp3_dest = shift;
+	my $wav_dest = shift;
 
-	my $mp3_filename;
-	my $wav_filename;
 	if($url =~ /.*\/(.*)\.mp3/)
 	{
 		my $filename = $1;
@@ -117,6 +209,8 @@ sub download
 
 sub save
 {
+	my $filehandle = shift;
+
 	my $jsonparser = new JSON;
 	my $res;
 
@@ -129,7 +223,8 @@ sub save
 	$res->{'filename'} = $filename;
 	$res->{'info'} = $info;
 	$res->{'time'} = $time;
-	print OUT $jsonparser->encode($res)."\n";
+
+	print $filehandle $jsonparser->encode($res)."\n";
 }
 
 1;
