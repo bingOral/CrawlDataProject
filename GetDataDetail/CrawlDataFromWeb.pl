@@ -82,9 +82,9 @@ sub init
 	my $config = Config::Tiny->new;
 	$config = Config::Tiny->read('config/config.ini', 'utf8');
 	
-	my $mp3_dest = $config->{config}->{mp3_dir};
-	my $wav_dest = $config->{config}->{wav_dir};
-	my $res_dest = $config->{config}->{res_dir};
+	my $mp3_dest = $config->{crawl_data_config}->{mp3_dir};
+	my $wav_dest = $config->{crawl_data_config}->{wav_dir};
+	my $res_dest = $config->{crawl_data_config}->{res_dir};
 	createdir($mp3_dest);
 	createdir($wav_dest);
 	
@@ -93,7 +93,7 @@ sub init
 
 	$res->{mp3_dest} = $mp3_dest;
 	$res->{wav_dest} = $wav_dest;
-	$res->{proxy_flag} = $config->{config}->{proxy_flag};
+	$res->{proxy_flag} = $config->{crawl_data_config}->{proxy_flag};
 	return $res;
 }
 
