@@ -1,9 +1,10 @@
 #!/usr/bin/perl
 
+package crawl;
 use strict;
 use Encode;
+use POSIX;
 use LWP::Simple;
-package crawl;
 
 sub parserVoaNormalHTML
 {
@@ -86,23 +87,23 @@ sub getFilenameFromUrl
 
 sub download
 {
-	my $url = shift;
+	my $mp3_url = shift;
 	my $mp3_dest = shift;
 
-	my $res = getFilenameFromUrl($url);
+	my $res = getFilenameFromUrl($mp3_url);
 	my $mp3_filename = $mp3_dest.$res->{mp3_filename};
 
-	getstore($url, $mp3_filename);
+	getstore($mp3_url, $mp3_filename);
 	return $mp3_filename;
 }
 
 sub convert
 {
-	my $url = shift;
+	my $mp3_url = shift;
 	my $mp3_filename = shift;
 	my $wav_dest = shift;
 
-	my $res = getFilenameFromUrl($url);
+	my $res = getFilenameFromUrl($mp3_url);
 	my $wav_filename = $wav_dest.$res->{wav_filename};
 
 	#convert

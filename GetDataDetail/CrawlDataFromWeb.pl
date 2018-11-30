@@ -1,8 +1,6 @@
 #!/usr/bin/perl
 
-use LWP::Simple;
 use strict;
-use POSIX;
 use JSON;
 use threads;
 use Encode;
@@ -144,8 +142,8 @@ sub getData
 		my $res = crawl::parserVoaNormalHTML($url,$response,$filehandle);
 		if($res)
 		{
-			my $mp3_filename = crawl::download($res,$mp3_dest);
-			my $wav_filename = crawl::convert($url,$mp3_filename,$wav_dest);
+			my $mp3_filename = crawl::download($res->{mp3},$mp3_dest);
+			my $wav_filename = crawl::convert($res->{mp3},$mp3_filename,$wav_dest);
 			crawl::save($url,$wav_filename,$res->{info},$filehandle);
 		}
 	}
