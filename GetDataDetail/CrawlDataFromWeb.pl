@@ -10,6 +10,7 @@ use Config::Tiny;
 use Try::Tiny;
 use LWP::UserAgent;
 use HTML::TreeBuilder;
+use script::CrawlSubs;
 binmode STDOUT, ":utf8";
 
 if(scalar(@ARGV) != 2)
@@ -132,111 +133,30 @@ sub getData
 	my $proxy_flag = shift;
 
 	my $try = 5;
-	
+
 	my $ua = LWP::UserAgent->new;
-
-	if($proxy_flag == 1)
-	{
-		$ua->proxy('http', getProxyIP());
-	}
-
+	$ua->proxy('http', getProxyIP()) if($proxy_flag == 1);
 	$ua->agent('Mozilla/5.0 '.$ua->_agent);
 	my $response = $ua->get($url);
 
 	if($response->is_success)
 	{
-		my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
-
-		my $mp3_node = $root->look_down(_tag => 'a', id => 'mp3');
-		my $filename;
-		if($mp3_node)
+		my $res = crawl::parserVoaNormalHTML($url,$response,$filehandle);
+		if($res)
 		{
-			print $mp3_node->{href}."\n";
-			$filename = download($mp3_node->{'href'},$mp3_dest,$wav_dest);
-		}
-		else
-		{
-			return;
-		}
-		
-		my $content_node = $root->look_down(_tag => 'div', id => 'content');
-		if($content_node)
-		{
-			my @contents = $content_node->find_by_tag_name('p');
-			my $buffer;
-			foreach my $content (@contents) 
-			{
-				my $text = $content->as_trimmed_text();
-				if($text =~ /_________________________________/)
-				{
-					last;
-				}
-				$buffer .= $text." ";
-			}
-
-			save($url,$filename,$buffer,$filehandle);
-			$buffer = "";
+			my $mp3_filename = crawl::download($res,$mp3_dest);
+			my $wav_filename = crawl::convert($url,$mp3_filename,$wav_dest);
+			crawl::save($url,$wav_filename,$res->{info},$filehandle);
 		}
 	}
 	else
 	{
-		if($try--)
-		{
-			return;
-		}
-		
+		return if($try--);
+
 		sleep(2);
 		print "Get data fail, Try again...$url\n";
 		getData($url,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
 	}
-}
-
-sub download
-{
-	my $url = shift;
-	my $mp3_dest = shift;
-	my $wav_dest = shift;
-	
-	my $mp3_filename;
-	my $wav_filename;
-
-	if($url =~ /.*\/(.*)\.mp3/)
-	{
-		my $filename = $1;
-		$filename =~ s/\s+//g;
-		$mp3_filename = $mp3_dest.$filename.'.mp3';
-		$wav_filename = $wav_dest.$filename.'.wav';
-	}
-
-	getstore($url, $mp3_filename);
-	print $mp3_filename."\n";
-	print $url."\n";
-
-	#convert
-	my $c_str = "ffmpeg -v quiet -y -i $mp3_filename -f wav -ar 16000 -ac 1 $wav_filename";
-	print $c_str."\n"; 
-	system($c_str);
-	
-	return $wav_filename;
-}
-
-sub save
-{
-	my $url = shift;
-	my $filename = shift;
-	my $info = shift;
-	my $filehandle = shift;
-
-	my $jsonparser = new JSON;
-	my $res;
-	my $time = strftime("%Y.%m.%d %H:%M:%S",localtime());
-
-	$res->{'url'} = $url;
-	$res->{'filename'} = $filename;
-	$res->{'info'} = $info;
-	$res->{'time'} = $time;
-
-	print $filehandle $jsonparser->encode($res)."\n";
 }
 
 1;
