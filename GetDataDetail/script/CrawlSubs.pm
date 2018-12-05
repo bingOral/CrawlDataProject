@@ -75,7 +75,7 @@ sub getFilenameFromUrl
 	if($url =~ /.*\/(.*)\.mp3/)
 	{
 		my $filename = $1;
-		$filename =~ s/\s+|\\|\/|\"|\'//g;
+		$filename =~ s/\s+|\\|\/|\"|\'|%//g;
 		$mp3_filename = $filename.'.mp3';
 		$wav_filename = $filename.'.wav';
 
