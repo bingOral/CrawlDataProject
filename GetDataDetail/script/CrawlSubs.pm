@@ -4,7 +4,9 @@ package crawl;
 use strict;
 use Encode;
 use POSIX;
+use Data::Dumper;
 use LWP::Simple;
+use HTML::TreeBuilder;
 
 sub parserVoaNormalHTML
 {
@@ -13,43 +15,117 @@ sub parserVoaNormalHTML
 	my $res;
 	my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
 	my $mp3_node = $root->look_down(_tag => 'a', id => 'mp3');
-	my $filename;
 
 	if($mp3_node)
 	{
-		print $mp3_node->{href}."\n";
 		$res->{mp3} = $mp3_node->{href};
-	}
-	else
-	{
-		return;
 	}
 	
 	my $content_node = $root->look_down(_tag => 'div', id => 'content');
 	if($content_node)
 	{
-		my @contents = $content_node->find_by_tag_name('p');
 		my $info;
-		
-		foreach my $content (@contents) 
+		my @contents = $content_node->find_by_tag_name('p');
+		if(scalar(@contents) > 0)
 		{
-			my $text = $content->as_trimmed_text();
-			if($text =~ /_________________________________/)
+			foreach my $content (@contents) 
 			{
-				last;
+				my $text = $content->as_trimmed_text();
+				if($text =~ /________________________/)
+				{
+					last;
+				}
+				$info .= $text." ";
 			}
-			$info .= $text." ";
+			$res->{info} = $info;
+			$info = "";
 		}
-		$res->{info} = $info;
-		$info = "";
-	}
-	else
-	{
-		return;
+		else
+		{
+			$res->{info} = $content_node->as_trimmed_text();		
+		}
 	}
 
 	return $res;
 }
+
+sub parser51enHTML
+{
+	my $response = shift;
+
+	my $res;
+	my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
+	my $mp3_node = $root->look_down(_tag => 'a', id => 'menu_mp3');
+
+	if($mp3_node)
+	{
+		$res->{mp3} = $mp3_node->{href};
+	}
+	
+	my $content_node = $root->look_down(_tag => 'BODY', scroll => 'auto');
+	if($content_node)
+	{
+		my $info;
+		my @contents = $content_node->find_by_tag_name('P');
+		if(scalar(@contents) > 0)
+		{
+			foreach my $content (@contents) 
+			{
+				my $text = $content->as_trimmed_text();
+				$info .= $text." ";
+			}
+			$res->{info} = $info;
+			$info = "";
+		}
+	}
+	else
+	{
+		$content_node = $root->look_down(_tag => 'div', class => 'article-content');	
+		{
+			$res->{info} = $content_node->as_trimmed_text();		
+		}
+	}
+
+	return $res;
+}
+
+sub parserVoaSpecialHTML
+{
+	my $response = shift;
+	
+	my $res;
+	my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
+
+	my $mp3_node = $root->look_down(_tag => 'script', language => 'javascript');
+	if($mp3_node->{_content}->[0] =~ /Player\(\"(.*.mp3)\"\);/)
+	{
+		$res->{mp3} = 'http://downdb.51voa.com'.$1;
+	}
+	
+	my $content_node = $root->look_down(_tag => 'div', id => 'content');
+	if($content_node)
+	{
+		my $info;
+		my @contents = $content_node->find_by_tag_name('p');
+		if(scalar(@contents) > 0)
+		{
+			foreach my $content (@contents) 
+			{
+				my $text = $content->as_trimmed_text();
+				$info .= $text." ";
+			}
+			$res->{info} = $info;
+			$info = "";
+		}
+		else
+		{
+			$res->{info} = $content_node->as_trimmed_text();		
+		}
+	}
+
+	return $res;
+}
+
 
 sub formater
 {
@@ -57,7 +133,7 @@ sub formater
 
 	unless(Encode::is_utf8($info))
 	{
-		$info = Encode::decode('iso-8859-1',$info);
+		$info = Encode::decode('utf-8',$info);
 	}
 	return $info;
 }
