@@ -139,7 +139,7 @@ sub getData
 
 	if($response->is_success)
 	{
-		my $res = crawl::parserVoaNormalHTML($url,$response,$filehandle);
+		my $res = crawl::parserVoaNormalHTML($response);
 		if($res)
 		{
 			my $mp3_filename = crawl::download($res->{mp3},$mp3_dest);
