@@ -8,12 +8,9 @@ use LWP::Simple;
 
 sub parserVoaNormalHTML
 {
-	my $url = shift;
 	my $response = shift;
-	my $filehandle = shift;
 
 	my $res;
-
 	my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
 	my $mp3_node = $root->look_down(_tag => 'a', id => 'mp3');
 	my $filename;
