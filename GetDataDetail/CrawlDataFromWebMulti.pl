@@ -109,7 +109,7 @@ sub dowork
 			print $url.'/transcript'."\n";
 			my $origin = $json->{$url}->[1];
 			getData($url.'/transcript',$filehandle,$origin_dir,$wav_dest,$proxy_flag,$origin);
-			die;
+			#die;
 		}
 	}
 }

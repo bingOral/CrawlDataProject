@@ -211,7 +211,7 @@ sub download
 	my $res = getFilenameFromTedUrl($url);
 	my $local_filename = $origin_dir.$res->{mp4_filename};
 	
-	print "Downloading file ".$url."\n";
+	print "Downloading file : ".$url." now!\n";
 	getstore($url, $local_filename);
 	return $local_filename;
 }
