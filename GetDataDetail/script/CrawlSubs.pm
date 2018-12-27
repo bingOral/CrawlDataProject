@@ -11,20 +11,22 @@ use HTML::TreeBuilder;
 sub parserTedHTML
 {
 	my $response = shift;
+	my $origin = shift;
 
 	my $res;
 	my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
-	my @info_nodes = $root->look_down(_tag => 'div', class => ' Grid Grid--with-gutter d:f@md p-b:4 ');
+	my @info_nodes = $root->look_down(_tag => 'div', class => 'Grid Grid--with-gutter d:f@md p-b:4');
 
 	my $info = "";
 	foreach my $info_node (@info_nodes)
 	{
-		my $text_node = $info_node->look_down(_tag => 'a', class => 't-d:n hover/bg:gray-l.5');
+		my $text_node = $info_node->look_down(_tag => 'div', class => 'Grid__cell flx-s:1 p-r:4');
 		my $text = $text_node->as_trimmed_text();
 		$info .= $text." ";
 	}
 	
 	$res->{info} = $info;
+	$res->{origin} = $origin;
 
 	return $res;
 }
@@ -39,7 +41,7 @@ sub parserVoaNormalHTML
 
 	if($mp3_node)
 	{
-		$res->{mp3} = $mp3_node->{href};
+		$res->{origin} = $mp3_node->{href};
 	}
 	
 	my $content_node = $root->look_down(_tag => 'div', id => 'content');
@@ -80,7 +82,7 @@ sub parser51enHTML
 
 	if($mp3_node)
 	{
-		$res->{mp3} = $mp3_node->{href};
+		$res->{origin} = $mp3_node->{href};
 	}
 	
 	my $content_node = $root->look_down(_tag => 'BODY', scroll => 'auto');
@@ -120,7 +122,7 @@ sub parserVoaSpecialHTML
 	my $mp3_node = $root->look_down(_tag => 'script', language => 'javascript');
 	if($mp3_node->{_content}->[0] =~ /Player\(\"(.*.mp3)\"\);/)
 	{
-		$res->{mp3} = 'http://downdb.51voa.com'.$1;
+		$res->{origin} = 'http://downdb.51voa.com'.$1;
 	}
 	
 	my $content_node = $root->look_down(_tag => 'div', id => 'content');
@@ -179,29 +181,52 @@ sub getFilenameFromUrl
 	return $res;
 }
 
-sub download
+sub getFilenameFromTedUrl
 {
-	my $mp3_url = shift;
-	my $mp3_dest = shift;
+	my $url = shift;
 
-	my $res = getFilenameFromUrl($mp3_url);
-	my $mp3_filename = $mp3_dest.$res->{mp3_filename};
+	my $res;
+	my $mp4_filename;
+	my $wav_filename;
 
-	getstore($mp3_url, $mp3_filename);
-	return $mp3_filename;
+	#https://download.ted.com/talks/ColinRobertson_2012.mp4?apikey=TEDDOWNLOAD
+	if($url =~ /.*\/(.*)\.mp4\?apikey=TEDDOWNLOAD/)
+	{
+		my $filename = $1;
+		$filename =~ s/\s+|\\|\/|\"|\'|%//g;
+		$mp4_filename = $filename.'.mp4';
+		$wav_filename = $filename.'.wav';
+
+		$res->{mp4_filename} = $mp4_filename;
+		$res->{wav_filename} = $wav_filename;
+	}
+	return $res;
 }
 
-sub convert
+sub download
 {
-	my $mp3_url = shift;
-	my $mp3_filename = shift;
+	my $url = shift;
+	my $origin_dir = shift;
+
+	my $res = getFilenameFromTedUrl($url);
+	my $local_filename = $origin_dir.$res->{mp4_filename};
+	
+	print "Downloading file ".$url."\n";
+	getstore($url, $local_filename);
+	return $local_filename;
+}
+
+sub OriginToWav
+{
+	my $url = shift;
+	my $local_filename = shift;
 	my $wav_dest = shift;
 
-	my $res = getFilenameFromUrl($mp3_url);
+	my $res = getFilenameFromTedUrl($url);
 	my $wav_filename = $wav_dest.$res->{wav_filename};
 
 	#convert
-	my $c_str = "ffmpeg -v quiet -y -i $mp3_filename -f wav -ar 16000 -ac 1 $wav_filename";
+	my $c_str = "ffmpeg -v quiet -y -i $local_filename -f wav -ar 16000 -ac 1 $wav_filename";
 	print $c_str."\n"; 
 	system($c_str);
 

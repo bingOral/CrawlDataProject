@@ -4,8 +4,9 @@ use strict;
 use JSON;
 use threads;
 use Encode;
-use Config::Tiny;
 use Try::Tiny;
+use Data::Dumper;
+use Config::Tiny;
 use LWP::UserAgent;
 use HTML::TreeBuilder;
 use script::CrawlSubs;
@@ -34,7 +35,7 @@ sub Main
 		$random =~ s/[\r\n]//g;
 		open(OUT,">res/res-$random.txt")||die("The file can't find!\n");
 
-		my $thread = threads->create(\&dowork,$group->{$key},\*OUT,$ref->{mp3_dest},$ref->{wav_dest},$ref->{proxy_flag});
+		my $thread = threads->create(\&dowork,$group->{$key},\*OUT,$ref->{origin_dir},$ref->{wav_dest},$ref->{proxy_flag});
 		push @threads,$thread;
 	}
 
@@ -65,16 +66,16 @@ sub init
 	my $config = Config::Tiny->new;
 	$config = Config::Tiny->read('config/config.ini', 'utf8');
 	
-	my $mp3_dest = $config->{crawl_data_config}->{mp3_dir};
+	my $origin_dir = $config->{crawl_data_config}->{origin_dir};
 	my $wav_dest = $config->{crawl_data_config}->{wav_dir};
 	my $res_dest = $config->{crawl_data_config}->{res_dir};
-	createdir($mp3_dest);
+	createdir($origin_dir);
 	createdir($wav_dest);
 	
 	qx(rm -rf $res_dest);
 	createdir($res_dest);
 
-	$res->{mp3_dest} = $mp3_dest;
+	$res->{origin_dir} = $origin_dir;
 	$res->{wav_dest} = $wav_dest;
 	$res->{proxy_flag} = $config->{crawl_data_config}->{proxy_flag};
 	return $res;
@@ -93,15 +94,23 @@ sub dowork
 {
 	my $param = shift;
 	my $filehandle = shift;
-	my $mp3_dest = shift;
+	my $origin_dir = shift;
 	my $wav_dest = shift;
 	my $proxy_flag = shift;
-
+	
+	my $jsonparser = new JSON;
 	foreach my $row (@$param)
 	{
+		#modify
 		chomp($row);
-		print $row."\n";
-		getData($row,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
+		my $json = $jsonparser->decode($row);
+		foreach my $url (keys %$json)
+		{	
+			print $url.'/transcript'."\n";
+			my $origin = $json->{$url}->[1];
+			getData($url.'/transcript',$filehandle,$origin_dir,$wav_dest,$proxy_flag,$origin);
+			die;
+		}
 	}
 }
 
@@ -109,9 +118,10 @@ sub getData
 {
 	my $url = shift;
 	my $filehandle = shift;
-	my $mp3_dest = shift;
+	my $origin_dir = shift;
 	my $wav_dest = shift;
 	my $proxy_flag = shift;
+	my $origin = shift;
 
 	my $try = 5;
 
@@ -122,21 +132,17 @@ sub getData
 
 	if($response->is_success)
 	{
-		my $res = crawl::parserVoaNormalHTML($response);
-		if($res)
-		{
-			my $mp3_filename = crawl::download($res->{mp3},$mp3_dest);
-			my $wav_filename = crawl::convert($res->{mp3},$mp3_filename,$wav_dest);
-			crawl::save($url,$wav_filename,$res->{info},$filehandle);
-		}
+		my $res = crawl::parserTedHTML($response,$origin);
+		my $local_filename = crawl::download($res->{origin},$origin_dir);
+		my $wav_filename = crawl::OriginToWav($res->{origin},$local_filename,$wav_dest);
+		crawl::save($url,$wav_filename,$res->{info},$filehandle);
 	}
 	else
 	{
 		return if($try--);
-
 		sleep(2);
 		print "Get data fail, Try again...$url\n";
-		getData($url,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
+		getData($url,$filehandle,$origin_dir,$wav_dest,$proxy_flag,$origin);
 	}
 }
 
