@@ -6,6 +6,7 @@ use POSIX;
 use threads;
 use Encode;
 use Try::Tiny;
+use Data::Dumper;
 use LWP::UserAgent;
 use HTML::TreeBuilder;
 
@@ -13,25 +14,26 @@ open(OUT,">$ARGV[0]")||die("The file can't find!\n");
 
 my $ref = {
 	'news' => {
-		'cnn/list_4_' => 30,
-		'npr/list_5_' => 139,
-		'cri/list_10_' => 43,
-		'ap/list_2_' => 26,
-		'sci/list_9_' => 25,
-		'economist/list_19_' => 41
+		'news/cnn/list_4_' => 30,
+		'news/npr/list_5_' => 139,
+		'news/cri/list_10_' => 43,
+		'news/ap/list_2_' => 26,
+		'news/sci/list_9_' => 25,
+		'news/economist/list_19_' => 41
 	},
 	'nce' => {
-		'rp/list_24_' => 6,
-		'ga/list_29_' => 6
+		'nce/rp/list_24_' => 6,
+		'nce/ga/list_29_' => 6
+	},
+	'ted' => {
+		'talks/quick-list?page=' => 95
 	}
 };
 
-my $news = $ref->{news};
-my $nce = $ref->{nce};
-my $prefix = 'http://www.51en.com';
+my $ted = $ref->{ted};
+my $prefix = 'https://www.ted.com';
 
-&scan($news,'news');
-&scan($nce,'nce');
+&scan($ted);
 
 sub scan
 {
@@ -43,9 +45,9 @@ sub scan
 		my $values = $ref->{$key};
 		for(my $i = 1; $i <= $values; $i++)
 		{
-			my $url = $prefix.'/'.$flag.'/'.$key.$i.'.html';
+			my $url = $prefix.'/'.$key.$i;
 			print $url."\n";
-			getData($url);
+			#getData($url);
 		}
 	}
 }
@@ -62,20 +64,15 @@ sub getData
 	if($response->is_success)
 	{
 		my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
-		my $info_node = $root->look_down(_tag => 'div', class => 'listl list3');
-		if($info_node)
-		{
-			my @Links = $info_node->find_by_tag_name('a');
-			foreach my $link (@Links) 
-			{
-                my $href = $link->{'href'};
-                my $flag = $link->{'target'};
-                if($flag)
-                {
-                	print OUT $prefix.$href."\n";
-                }
-			}
-		}
+		my $info_node = $root->look_down(_tag => 'div', class => 'row quick-list__container');
+
+		my $url_node = $info_node->look_down(_tag => 'span', 'class' => 'l3');
+		my $mp4_node = $info_node->look_down(_tag => 'ul', 'class' => 'quick-list__download');
+		print Dumper($url_node);
+		print "+++++++++++++++++\n";
+		print Dumper($mp4_node);
+
+		die;
 	}
 	else
 	{
