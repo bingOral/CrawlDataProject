@@ -11,6 +11,7 @@ use HTML::TreeBuilder;
 sub ParserTedData 
 {
 	my $url = shift;
+	my $prefix = shift;
 
 	my $try = 5;
 	my $res;
@@ -28,18 +29,20 @@ sub ParserTedData
 
 		foreach my $info_node (@info_nodes)
 		{
-			my $url_node = $info_node->look_down(_tag => 'span', 'class' => 'l3')->look_down(_tag => 'a');
-			my @mp4_nodes = $info_node->look_down(_tag => 'li')->look_down(_tag => 'a');
+			my $url_node = $info_node->look_down(_tag => 'span', 'class' => 'l3');
+			my $a_url_node = $url_node->look_down(_tag => 'a');
+
+			my @mp4_nodes = $info_node->look_down(_tag => 'li');
 
 			foreach my $mp4_node (@mp4_nodes)
 			{
-				my $url = $prefix.$url_node->{href};
-				push @{$res->{$url}},$mp4_node->{href};
+				my $url = $prefix.$a_url_node->{href};
+				my $a_mp4_node = $mp4_node->look_down(_tag => 'a');
+				push @{$res->{$url}},$a_mp4_node->{href};
 			}
 		}
 
 		print $jsonparser->encode($res)."\n";
-		die;
 	}
 	else
 	{
@@ -50,7 +53,7 @@ sub ParserTedData
 		
 		sleep(2);
 		print "Outer : Get data fail, Try again...$url\n";
-		getData($url);
+		ParserTedData($url,$prefix);
 	}
 }
 

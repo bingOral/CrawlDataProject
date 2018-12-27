@@ -44,7 +44,7 @@ sub scan
 		{
 			my $url = $prefix.'/'.$key.$i;
 			print $url."\n";
-			HtmlTools::ParserTedData($url);
+			HtmlTools::ParserTedData($url,$prefix);
 		}
 	}
 }
