@@ -50,29 +50,13 @@ sub div
 	my $threadnum = shift;
 
 	my $res;
-    	for(my $i = 0; $i < scalar(@$ref); $i++)
-   	{
-   		my $flag = $i%$threadnum;
-   		push @{$res->{$flag}},$ref->[$i];
-    	}
-
-    	return $res;
-}
-
-sub dowork
-{
-	my $param = shift;
-	my $filehandle = shift;
-	my $mp3_dest = shift;
-	my $wav_dest = shift;
-	my $proxy_flag = shift;
-
-	foreach my $row (@$param)
+	for(my $i = 0; $i < scalar(@$ref); $i++)
 	{
-		chomp($row);
-		print $row."\n";
-		getData($row,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
+		my $flag = $i%$threadnum;
+		push @{$res->{$flag}},$ref->[$i];
 	}
+
+	return $res;
 }
 
 sub init
@@ -105,21 +89,20 @@ sub createdir
 	}
 }
 
-sub getProxyIP
+sub dowork
 {
-	my $ua = LWP::UserAgent->new;
-	my $response = $ua->get('http://123.207.35.36:5010/get');
-	if($response->is_success)
+	my $param = shift;
+	my $filehandle = shift;
+	my $mp3_dest = shift;
+	my $wav_dest = shift;
+	my $proxy_flag = shift;
+
+	foreach my $row (@$param)
 	{
-		return 'http://'.$response->decoded_content;
+		chomp($row);
+		print $row."\n";
+		getData($row,$filehandle,$mp3_dest,$wav_dest,$proxy_flag);
 	}
-	else
-	{
-		sleep(2);
-		print "Get proxy ip fail, Try again...\n";
-		getProxyIP();
-	}
-	
 }
 
 sub getData 
@@ -133,7 +116,7 @@ sub getData
 	my $try = 5;
 
 	my $ua = LWP::UserAgent->new;
-	$ua->proxy('http', getProxyIP()) if($proxy_flag == 1);
+	$ua->proxy('https', 'http://192.168.1.20:3128') if($proxy_flag == 1);
 	$ua->agent('Mozilla/5.0 '.$ua->_agent);
 	my $response = $ua->get($url);
 

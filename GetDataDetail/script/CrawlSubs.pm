@@ -8,6 +8,27 @@ use Data::Dumper;
 use LWP::Simple;
 use HTML::TreeBuilder;
 
+sub parserTedHTML
+{
+	my $response = shift;
+
+	my $res;
+	my $root = HTML::TreeBuilder->new_from_content($response->decoded_content);
+	my @info_nodes = $root->look_down(_tag => 'div', class => ' Grid Grid--with-gutter d:f@md p-b:4 ');
+
+	my $info = "";
+	foreach my $info_node (@info_nodes)
+	{
+		my $text_node = $info_node->look_down(_tag => 'a', class => 't-d:n hover/bg:gray-l.5');
+		my $text = $text_node->as_trimmed_text();
+		$info .= $text." ";
+	}
+	
+	$res->{info} = $info;
+
+	return $res;
+}
+
 sub parserVoaNormalHTML
 {
 	my $response = shift;
