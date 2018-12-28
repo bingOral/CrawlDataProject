@@ -211,8 +211,12 @@ sub download
 	my $res = getFilenameFromTedUrl($url);
 	my $local_filename = $origin_dir.$res->{mp4_filename};
 	
-	print "Downloading file : ".$url." now!\n";
-	getstore($url, $local_filename);
+	#add for ted
+	my $new_url = $url;
+	$new_url =~ s/.mp4\?apikey=TEDDOWNLOAD$/-600k.mp4/;
+	
+	print "Downloading file : ".$new_url." now!\n";
+	getstore($new_url, $local_filename);
 	return $local_filename;
 }
 
@@ -228,7 +232,7 @@ sub OriginToWav
 	#convert
 	my $c_str = "ffmpeg -v quiet -y -i $local_filename -f wav -ar 16000 -ac 1 $wav_filename";
 	print $c_str."\n"; 
-	system($c_str);
+	system($c_str) unless -e $wav_filename;
 
 	return $wav_filename;
 }

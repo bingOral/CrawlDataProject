@@ -72,7 +72,7 @@ sub init
 	createdir($origin_dir);
 	createdir($wav_dest);
 	
-	qx(rm -rf $res_dest);
+	#qx(rm -rf $res_dest);
 	createdir($res_dest);
 
 	$res->{origin_dir} = $origin_dir;
@@ -108,6 +108,7 @@ sub dowork
 		{	
 			print $url.'/transcript'."\n";
 			my $origin = $json->{$url}->[1];
+			#https://download.ted.com/talks/DavidGallo_DeepOcean_2012E-600k.mp4
 			getData($url.'/transcript',$filehandle,$origin_dir,$wav_dest,$proxy_flag,$origin);
 			#die;
 		}
