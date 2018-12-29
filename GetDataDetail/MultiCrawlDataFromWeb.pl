@@ -72,12 +72,13 @@ sub init
 	createdir($origin_dir);
 	createdir($wav_dest);
 	
-	#qx(rm -rf $res_dest);
+	qx(rm -rf $res_dest);
 	createdir($res_dest);
 
 	$res->{origin_dir} = $origin_dir;
 	$res->{wav_dest} = $wav_dest;
 	$res->{proxy_flag} = $config->{crawl_data_config}->{proxy_flag};
+	$res->{proxy_pool} = $config->{crawl_data_config}->{proxy_pool};
 	return $res;
 }
 
