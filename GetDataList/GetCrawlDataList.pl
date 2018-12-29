@@ -11,12 +11,12 @@ use script::HtmlSubs;
 
 my $ref = {
 	'news' => {
-		'news/cnn/list_4_' => 30,
-		'news/npr/list_5_' => 139,
+		'news/cnn/list_4_' => 31,
+		'news/npr/list_5_' => 143,
 		'news/cri/list_10_' => 43,
-		'news/ap/list_2_' => 26,
+		'news/ap/list_2_' => 27,
 		'news/sci/list_9_' => 25,
-		'news/economist/list_19_' => 41
+		'news/economist/list_19_' => 42
 	},
 	'nce' => {
 		'nce/rp/list_24_' => 6,
