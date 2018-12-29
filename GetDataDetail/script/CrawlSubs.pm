@@ -5,8 +5,8 @@ use strict;
 use Encode;
 use POSIX;
 use Data::Dumper;
-use LWP::Simple;
 use HTML::TreeBuilder;
+use LWP::UserAgent;
 
 sub parserTedHTML
 {
@@ -254,6 +254,19 @@ sub save
 	$res->{'time'} = $time;
 
 	print $filehandle $jsonparser->encode($res)."\n";
+}
+
+sub getstore
+{
+	my($url, $file) = @_;
+	my $ua = LWP::UserAgent->new;
+	$ua->proxy('https', 'http://192.168.1.20:3128');
+	$ua->agent('Mozilla/5.0 '.$ua->_agent);
+
+	my $request = HTTP::Request->new(GET => $url);
+	my $response = $ua->request($request, $file);
+ 
+	$response->code;
 }
 
 1;
