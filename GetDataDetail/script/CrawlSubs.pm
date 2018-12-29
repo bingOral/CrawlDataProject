@@ -216,7 +216,7 @@ sub download
 	$new_url =~ s/.mp4\?apikey=TEDDOWNLOAD$/-600k.mp4/;
 	
 	print "Downloading file : ".$new_url." now!\n";
-	getstore($new_url, $local_filename);
+	getstore($new_url, $local_filename) unless -e $local_filename;
 	return $local_filename;
 }
 
