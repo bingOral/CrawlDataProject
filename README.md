@@ -1,7 +1,6 @@
 # CrawlDataProject
-***使用perl脚本爬取网上数据***
 
-## 一.获取待爬取的URL列表
+## 一、获取待爬取的URL列表
 
 ### 1.用法：
 - perl GetCrawlDataList.pl
