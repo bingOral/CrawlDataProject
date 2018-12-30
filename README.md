@@ -12,11 +12,13 @@
 ## 二、解析URL获取目标数据
 
 ### 1.用法：
-- perl 
+- perl MultiCrawlDataFromWeb.pl input threadnum
 
 ### 2.输入：
 - a.【步骤一】的输出结果；
 - b. 新增解析Dom的子函数；
+- c. 并发线程数；
+- d. 配置科学上网代理池，见config/config.ini
 
 ### 3.输出：
 - a.格式为json，详细如下：
