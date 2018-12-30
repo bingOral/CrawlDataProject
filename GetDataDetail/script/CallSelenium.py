@@ -16,7 +16,7 @@ driver.start_session(webdriver.DesiredCapabilities.PHANTOMJS)
 driver.get(url)
 
 try:
-	text = driver.find_element_by_xpath("//*[@class='py-1 px-3 text-sm cursor-pointer Link block uppercase']").get_attribute('href')
+	text = driver.find_element_by_link_text("SRT").get_attribute('href')
 	video = driver.find_element_by_xpath("//*[@class='py-1 px-3 text-sm cursor-pointer Link block']").get_attribute('href')
 	print(text + '@' + video)
 except:
