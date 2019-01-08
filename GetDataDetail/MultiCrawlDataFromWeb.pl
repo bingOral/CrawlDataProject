@@ -100,10 +100,13 @@ sub dowork
 	my $proxy_flag = shift;
 	
 	my $jsonparser = new JSON;
-	foreach my $row (@$param)
+	foreach my $url (@$param)
 	{
-		#modify
-		chomp($row);
+		chomp($url);
+		getData($url,$filehandle,$origin_dir,$wav_dest,$proxy_flag);
+		#die;
+=pod
+		#ted-data
 		my $json = $jsonparser->decode($row);
 		foreach my $url (keys %$json)
 		{	
@@ -113,6 +116,8 @@ sub dowork
 			getData($url.'/transcript',$filehandle,$origin_dir,$wav_dest,$proxy_flag,$origin);
 			#die;
 		}
+=cut 	
+		
 	}
 }
 
@@ -123,7 +128,9 @@ sub getData
 	my $origin_dir = shift;
 	my $wav_dest = shift;
 	my $proxy_flag = shift;
-	my $origin = shift;
+	
+	#ted
+	#my $origin = shift;
 
 	my $try = 5;
 
@@ -134,17 +141,37 @@ sub getData
 
 	if($response->is_success)
 	{
-		my $res = crawl::parserTedHTML($response,$origin);
+		#ted
+		#my $res = crawl::parserTedHTML($response,$origin);
+		#my $local_filename = crawl::downloadFormTed($res->{origin},$origin_dir);
+		#my $wav_filename = crawl::OriginToWav($res->{origin},$local_filename,$wav_dest);
+		#crawl::save($url,$wav_filename,$res->{info},$filehandle);
+	
+		#51en
+		#my $res = crawl::parser51enHTML($response);
+		#my $local_filename = crawl::download($res->{origin},$origin_dir);
+		#my $wav_filename = crawl::OriginToWav($res->{origin},$local_filename,$wav_dest);
+		#crawl::save($url,$wav_filename,$res->{info},$filehandle);
+		
+		#voa-special
+		my $res = crawl::parserVoaSpecialHTML($response);
 		my $local_filename = crawl::download($res->{origin},$origin_dir);
 		my $wav_filename = crawl::OriginToWav($res->{origin},$local_filename,$wav_dest);
 		crawl::save($url,$wav_filename,$res->{info},$filehandle);
+
+		#voa-normal
+		my $res = crawl::parserVoaNormalHTML($response);
+		my $local_filename = crawl::download($res->{origin},$origin_dir);
+		my $wav_filename = crawl::OriginToWav($res->{origin},$local_filename,$wav_dest);
+		crawl::save($url,$wav_filename,$res->{info},$filehandle);
+
 	}
 	else
 	{
 		return if($try--);
 		sleep(2);
 		print "Get data fail, Try again...$url\n";
-		getData($url,$filehandle,$origin_dir,$wav_dest,$proxy_flag,$origin);
+		getData($url,$filehandle,$origin_dir,$wav_dest,$proxy_flag);
 	}
 }
 

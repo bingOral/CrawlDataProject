@@ -4,6 +4,7 @@ package crawl;
 use strict;
 use Encode;
 use POSIX;
+use Try::Tiny;
 use Data::Dumper;
 use HTML::TreeBuilder;
 use LWP::UserAgent;
@@ -60,7 +61,7 @@ sub parserVoaNormalHTML
 				}
 				$info .= $text." ";
 			}
-			$res->{info} = $info;
+			$res->{info} = formater($info);
 			$info = "";
 		}
 		else
@@ -97,16 +98,23 @@ sub parser51enHTML
 				my $text = $content->as_trimmed_text();
 				$info .= $text." ";
 			}
-			$res->{info} = $info;
+			$res->{info} = formater($info);
 			$info = "";
 		}
 	}
 	else
 	{
-		$content_node = $root->look_down(_tag => 'div', class => 'article-content');	
+		try
 		{
-			$res->{info} = $content_node->as_trimmed_text();		
+			$content_node = $root->look_down(_tag => 'div', class => 'article-content');	
+			{
+				$res->{info} = $content_node->as_trimmed_text();		
+			}
 		}
+		catch
+		{
+			
+		};
 	}
 
 	return $res;
@@ -137,7 +145,7 @@ sub parserVoaSpecialHTML
 				my $text = $content->as_trimmed_text();
 				$info .= $text." ";
 			}
-			$res->{info} = $info;
+			$res->{info} = formater($info);
 			$info = "";
 		}
 		else
@@ -166,16 +174,17 @@ sub getFilenameFromUrl
 	my $url = shift;
 
 	my $res;
-	my $mp3_filename;
+	my $origin_filename;
 	my $wav_filename;
-	if($url =~ /.*\/(.*)\.mp3/)
+	if($url =~ /.*\/(.*)\.(mp[3|4])/)
 	{
 		my $filename = $1;
+		my $format = $2;
 		$filename =~ s/\s+|\\|\/|\"|\'|%//g;
-		$mp3_filename = $filename.'.mp3';
+		$origin_filename = $filename.'.'.$format;
 		$wav_filename = $filename.'.wav';
 
-		$res->{mp3_filename} = $mp3_filename;
+		$res->{origin_filename} = $origin_filename;
 		$res->{wav_filename} = $wav_filename;
 	}
 	return $res;
@@ -203,7 +212,7 @@ sub getFilenameFromTedUrl
 	return $res;
 }
 
-sub download
+sub downloadFormTed
 {
 	my $url = shift;
 	my $origin_dir = shift;
@@ -220,13 +229,28 @@ sub download
 	return $local_filename;
 }
 
+sub download
+{
+	my $url = shift;
+	my $origin_dir = shift;
+
+	my $res = getFilenameFromUrl($url);
+	my $local_filename = $origin_dir.$res->{origin_filename};
+	
+	print "Downloading file : ".$url." now!\n";
+	getstore($url, $local_filename) unless -e $local_filename;
+	return $local_filename;
+}
+
 sub OriginToWav
 {
 	my $url = shift;
 	my $local_filename = shift;
 	my $wav_dest = shift;
 
-	my $res = getFilenameFromTedUrl($url);
+	#ted
+	#my $res = getFilenameFromTedUrl($url);
+	my $res = getFilenameFromUrl($url);
 	my $wav_filename = $wav_dest.$res->{wav_filename};
 
 	#convert
