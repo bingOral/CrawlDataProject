@@ -154,10 +154,10 @@ sub getData
 		#crawl::save($url,$wav_filename,$res->{info},$filehandle);
 		
 		#voa-special
-		my $res = crawl::parserVoaSpecialHTML($response);
-		my $local_filename = crawl::download($res->{origin},$origin_dir);
-		my $wav_filename = crawl::OriginToWav($res->{origin},$local_filename,$wav_dest);
-		crawl::save($url,$wav_filename,$res->{info},$filehandle);
+		#my $res = crawl::parserVoaSpecialHTML($response);
+		#my $local_filename = crawl::download($res->{origin},$origin_dir);
+		#my $wav_filename = crawl::OriginToWav($res->{origin},$local_filename,$wav_dest);
+		#crawl::save($url,$wav_filename,$res->{info},$filehandle);
 
 		#voa-normal
 		my $res = crawl::parserVoaNormalHTML($response);
