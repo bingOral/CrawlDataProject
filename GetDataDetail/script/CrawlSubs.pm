@@ -55,10 +55,6 @@ sub parserVoaNormalHTML
 			foreach my $content (@contents) 
 			{
 				my $text = $content->as_trimmed_text();
-				if($text =~ /________________________/)
-				{
-					last;
-				}
 				$info .= $text." ";
 			}
 			$res->{info} = formater($info);
